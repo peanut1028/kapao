@@ -392,7 +392,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.albumentations = Albumentations() if augment else None
         self.kp_flip = kp_flip
         self.kp_bbox = kp_bbox
-        self.num_coords = len(kp_flip) * 2
+        # self.num_coords = len(kp_flip) * 2
+        self.num_coords = 3 * 2
 
         if self.kp_flip:
             self.obj_flip = {0: 0}

@@ -35,8 +35,11 @@ def run_nms(data, model_out):
                                              classes=[0],
                                              num_coords=data['num_coords'])
 
+        # kp_dets = non_max_suppression_kp(model_out, data['conf_thres_kp'], data['iou_thres_kp'],
+        #                                  classes=list(range(1, 1 + len(data['kp_flip']))),
+        #                                  num_coords=data['num_coords'])
         kp_dets = non_max_suppression_kp(model_out, data['conf_thres_kp'], data['iou_thres_kp'],
-                                         classes=list(range(1, 1 + len(data['kp_flip']))),
+                                         classes=list(range(1, 1 + 3)),
                                          num_coords=data['num_coords'])
     return person_dets, kp_dets
 
@@ -57,7 +60,9 @@ def post_process_batch(data, imgs, paths, shapes, person_dets, kp_dets,
 
         if nd:
             path, shape = Path(paths[si]) if len(paths) else '', shapes[si][0]
-            img_id = int(osp.splitext(osp.split(path)[-1])[0]) if path else si
+            img_id = int(osp.splitext(osp.split(path)[-1])[0]) if path else si    # 此处是按COCO的图片命名格式写死了, 但最好不直接用si，load可能是乱序
+            
+            # img_id = si + 1 # 如果命名格式跟COCO不同，需要修改
 
             # TWO-STAGE INFERENCE (EXPERIMENTAL)
             if two_stage:
@@ -78,7 +83,7 @@ def post_process_batch(data, imgs, paths, shapes, person_dets, kp_dets,
                     crop_pre = letterbox(crop, data['imgsz'], color=PAD_COLOR, stride=gs, auto=False)[0]
                     crop_input = torch.Tensor(np.transpose(np.expand_dims(crop_pre, axis=0), (0, 3, 1, 2))).to(device)
 
-                    out = model(crop_input, augment=True, kp_flip=data['kp_flip'], scales=data['scales'], flips=data['flips'])[0]
+                    out = model(crop_input, augment=True, scales=data['scales'], flips=data['flips'])[0]
                     person_dets, kp_dets = run_nms(data, out)
                     _, poses, scores, img_ids, _ = post_process_batch(
                         data, crop_input, paths, [[(h0, w0)]], person_dets, kp_dets, device=device, origins=origins)
@@ -146,7 +151,7 @@ def run(data,
         scales=[1],
         flips=[None],
         rect=False,
-        half=True,  # use FP16 half-precision inference
+        half=False,  # use FP16 half-precision inference
         model=None,
         dataloader=None,
         compute_loss=None,
@@ -215,7 +220,7 @@ def run(data,
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
         dataloader = create_dataloader(data[task], data['labels'], imgsz, batch_size, gs, rect=rect,
-                                       prefix=colorstr(f'{task}: '), kp_flip=data['kp_flip'])[0]
+                                       prefix=colorstr(f'{task}: '))[0]
 
     seen = 0
     mp, mr, map50, mAP, t0, t1, t2 = 0., 0., 0., 0., 0., 0., 0.
@@ -234,7 +239,7 @@ def run(data,
         t0 += t - t_
 
         # Run model
-        out, train_out = model(imgs, augment=True, kp_flip=data['kp_flip'], scales=data['scales'], flips=data['flips'])
+        out, train_out = model(imgs, scales=data['scales'], flips=data['flips'])
         t1 += time_sync() - t
 
         # Compute loss
@@ -278,7 +283,7 @@ def run(data,
         json_path = osp.join(save_dir, json_name)
     else:
         tmp = tempfile.NamedTemporaryFile(mode='w+b')
-        json_path = tmp.name
+        json_path = tmp.name + '.json'      # windows下需要添加json后缀
 
     with open(json_path, 'w') as f:
         json.dump(json_dump, f)
@@ -289,7 +294,7 @@ def run(data,
         result = coco.loadRes(json_path)
         eval = COCOeval(coco, result, iouType='keypoints')
         if 'oks_sigmas' in data:
-            eval.params.kpt_oks_sigmas = data['oks_sigmas']
+            eval.params.kpt_oks_sigmas = np.asarray(data['oks_sigmas'])
         eval.evaluate()
         eval.accumulate()
         eval.summarize()

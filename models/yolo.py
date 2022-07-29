@@ -133,7 +133,7 @@ class Model(nn.Module):
 
     def forward(self, x, augment=False, profile=False, visualize=False, kp_flip=None,
                 scales=[0.5, 1, 2], flips=[None, 3, None]):
-        if augment:
+        if augment and kp_flip:
             return self.forward_augment(x, kp_flip, s=scales, f=flips)  # augmented inference, None
         return self.forward_once(x, profile, visualize)  # single-scale inference, train
 

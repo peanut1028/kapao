@@ -98,7 +98,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     is_coco = data.endswith('coco.yaml') and nc == 80  # COCO dataset
 
     labels_dir = data_dict.get('labels', 'labels')
-    kp_flip = data_dict.get('kp_flip')
+    # kp_flip = data_dict.get('kp_flip')
+    kp_flip = None
     kp_bbox = data_dict.get('kp_bbox')
     num_coords = data_dict.get('num_coords', 0)
 
@@ -417,10 +418,10 @@ def parse_opt(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov5s6.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
-    parser.add_argument('--data', type=str, default='data/coco-kp.yaml', help='dataset.yaml path')
-    parser.add_argument('--hyp', type=str, default='data/hyps/hyp.kp-p6.yaml', help='hyperparameters path')
-    parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=8, help='total batch size for all GPUs')
+    parser.add_argument('--data', type=str, default='data/coco-custom.yaml', help='dataset.yaml path')
+    parser.add_argument('--hyp', type=str, default='data/hyps/hyp.kp.yaml', help='hyperparameters path')
+    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--batch-size', type=int, default=4, help='total batch size for all GPUs')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=1280, help='train, val image size (pixels)')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
@@ -436,10 +437,10 @@ def parse_opt(known=False):
     parser.add_argument('--single-cls', action='store_true', help='train multi-class data as single-class')
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
-    parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
-    parser.add_argument('--project', default='runs/train', help='save to project/name')
+    parser.add_argument('--workers', type=int, default=1, help='maximum number of dataloader workers')
+    parser.add_argument('--project', default='runs/s_e100', help='save to project/name')
     parser.add_argument('--entity', default=None, help='W&B entity')
-    parser.add_argument('--name', default='exp', help='save to project/name')
+    parser.add_argument('--name', default='train', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--quad', action='store_true', help='quad dataloader')
     parser.add_argument('--linear-lr', action='store_true', help='linear LR')

@@ -155,7 +155,7 @@ if __name__ == '__main__':
         if len(img.shape) == 3:
             img = img[None]  # expand for batch dim
 
-        out = model(img, augment=True, kp_flip=data['kp_flip'], scales=data['scales'], flips=data['flips'])[0]
+        out = model(img, augment=True, scales=data['scales'], flips=data['flips'])[0]
         person_dets, kp_dets = run_nms(data, out)
         bboxes, poses, _, _, _ = post_process_batch(data, img, [], [[im0.shape[:2]]], person_dets, kp_dets)
 
